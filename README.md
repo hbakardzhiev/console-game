@@ -7,4 +7,3 @@ You need to have nix with flakes installed. Provided you have that done, you jus
   - `w` for moving forward
   - `a` for moving left
   - `d` for moving right
-
