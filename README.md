@@ -10,6 +10,6 @@ You need to have nix with flakes installed. Provided you have that done, you jus
 
 # Pictures
 - Begin of gameplay
-![image](https://github.com/user-attachments/assets/d5d490ca-9f96-42e8-963d-d2c250d1b32b)
+  - ![image](https://github.com/user-attachments/assets/d5d490ca-9f96-42e8-963d-d2c250d1b32b)
 - End of gameplay
-![image](https://github.com/user-attachments/assets/55d25c25-654e-4a49-ab49-0dd60f029d88)
+  - ![image](https://github.com/user-attachments/assets/55d25c25-654e-4a49-ab49-0dd60f029d88)
