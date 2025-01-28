@@ -77,21 +77,50 @@ void addObstaclesEveryRow(std::array<std::array<string, 10>, 10> &matrix) {
 }
 
 void addObstacleToLastRowIfItObeysRules(
-    std::array<std::array<string, 10>, 10> &matrix) {
-  bool doIHaveToAddNewObstaclesToFirstRow = false;
-  for (size_t i = 0; i < HOW_OFTEN_AFTER_FIRST_ROW_TO_ADD_OBSTACLES; ++i) {
-    for (size_t j = 0; j < matrix[i].size(); ++j) {
-      if (matrix[i][j] == OBSTACLE_PLACEHOLDER) {
-        doIHaveToAddNewObstaclesToFirstRow = false;
+    std::array<std::array<std::string, 10>, 10> &matrix) {
+  bool addObstacles = true;
+  for (size_t i = 0;
+       i < std::min(matrix.size(),
+                    (size_t)(HOW_OFTEN_AFTER_FIRST_ROW_TO_ADD_OBSTACLES));
+       ++i) {
+    for (const auto &cell : matrix[i]) {
+      if (cell == OBSTACLE_PLACEHOLDER) {
+        addObstacles = false;
       }
     }
   }
-  if (doIHaveToAddNewObstaclesToFirstRow) {
+
+  if (addObstacles) {
     for (size_t j = 0; j < HOW_MANY_OBSTACLES_PER_ROW && j < matrix[0].size();
          ++j) {
-      auto const elementIndexToBeConvertedToObstacle =
+      size_t elementIndexToBeConvertedToObstacle =
           generateInitialPosition(matrix[0].size());
+
+      while (matrix[0][elementIndexToBeConvertedToObstacle] ==
+             OBSTACLE_PLACEHOLDER) {
+        elementIndexToBeConvertedToObstacle =
+            generateInitialPosition(matrix[0].size());
+      }
+
       matrix[0][elementIndexToBeConvertedToObstacle] = OBSTACLE_PLACEHOLDER;
+    }
+  }
+}
+
+void moveDownPlaceholdersInMatrix(
+    std::array<std::array<std::string, 10>, 10> &matrix) {
+  for (size_t i = 0; i < matrix.size() - 1; ++i) {  // Go from top to bottom
+    for (size_t j = 0; j < matrix[i].size(); ++j) { // Check each column
+      if (matrix[i][j] != DEFAULT_PLACEHOLDER &&
+          matrix[i + 1][j] == DEFAULT_PLACEHOLDER) {
+        // Swap if current is non-placeholder and the one below is a placeholder
+        std::swap(matrix[i][j], matrix[i + 1][j]);
+        // Since we've moved this element, skip checking it again in the next
+        // iteration
+        i++;
+        if (i >= matrix.size() - 1)
+          break; // Avoid going out of bounds
+      }
     }
   }
 }
@@ -128,14 +157,15 @@ int main() {
   auto position = initialPosition;
   while (true) {
     clearScreenToBeReDrawn();
+    addObstacleToLastRowIfItObeysRules(matrix);
     printMatrix(matrix);
     const auto keyboardInput = std::cin.get();
     position = newPositionOfPlayer(keyboardInput, position);
 
     populateMatrix(matrix, position);
 
-    addObstacleToLastRowIfItObeysRules(matrix);
-
     this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    moveDownPlaceholdersInMatrix(matrix);
   }
 }
