@@ -31,10 +31,16 @@ int generateInitialPosition(int arrLength) {
   return disInt(gen);
 }
 
+std::string const DEFAULT_PLACEHOLDER = "_";
+std::string const PLAYER_PLACEHOLDER = "*";
+std::string const OBSTACLE_PLACEHOLDER = "|";
 void populateMatrix(std::array<std::array<string, 10>, 10> &matrix,
                     const int &initialPosition) {
   for (size_t i = 0; i < matrix.size(); ++i) {
     for (size_t j = 0; j < matrix[i].size(); ++j) {
+      if (matrix[i][j] == OBSTACLE_PLACEHOLDER) {
+        continue;
+      }
       if (i == matrix[i].max_size() - 1 && j == initialPosition) {
         matrix[i][j] = "*";
       } else {
@@ -43,6 +49,53 @@ void populateMatrix(std::array<std::array<string, 10>, 10> &matrix,
     }
   }
 }
+
+auto const FROM_WHICH_ROW_TO_ADD_OBSTACLES = 3;
+auto const HOW_OFTEN_AFTER_FIRST_ROW_TO_ADD_OBSTACLES = 2;
+auto const HOW_MANY_OBSTACLES_PER_ROW = 2;
+void addObstaclesEveryRow(std::array<std::array<string, 10>, 10> &matrix) {
+  for (size_t i = matrix.size() - FROM_WHICH_ROW_TO_ADD_OBSTACLES;
+       i >= 0 && i < matrix.size();
+       i -= HOW_OFTEN_AFTER_FIRST_ROW_TO_ADD_OBSTACLES) {
+    // for (size_t indexToCheckIfObstaclesAreInitialized = 0;
+    //      indexToCheckIfObstaclesAreInitialized < matrix[i].size();
+    //      indexToCheckIfObstaclesAreInitialized++) {
+    //   if (matrix[i][indexToCheckIfObstaclesAreInitialized] ==
+    //           OBSTACLE_PLACEHOLDER ||
+    //       matrix[i][indexToCheckIfObstaclesAreInitialized] ==
+    //           PLAYER_PLACEHOLDER) {
+    //     continue;
+    //   }
+    // }
+    for (size_t j = 0; j < HOW_MANY_OBSTACLES_PER_ROW && j < matrix[i].size();
+         ++j) {
+      auto const elementIndexToBeConvertedToObstacle =
+          generateInitialPosition(matrix[i].size());
+      matrix[i][elementIndexToBeConvertedToObstacle] = OBSTACLE_PLACEHOLDER;
+    }
+  }
+}
+
+void addObstacleToLastRowIfItObeysRules(
+    std::array<std::array<string, 10>, 10> &matrix) {
+  bool doIHaveToAddNewObstaclesToFirstRow = false;
+  for (size_t i = 0; i < HOW_OFTEN_AFTER_FIRST_ROW_TO_ADD_OBSTACLES; ++i) {
+    for (size_t j = 0; j < matrix[i].size(); ++j) {
+      if (matrix[i][j] == OBSTACLE_PLACEHOLDER) {
+        doIHaveToAddNewObstaclesToFirstRow = false;
+      }
+    }
+  }
+  if (doIHaveToAddNewObstaclesToFirstRow) {
+    for (size_t j = 0; j < HOW_MANY_OBSTACLES_PER_ROW && j < matrix[0].size();
+         ++j) {
+      auto const elementIndexToBeConvertedToObstacle =
+          generateInitialPosition(matrix[0].size());
+      matrix[0][elementIndexToBeConvertedToObstacle] = OBSTACLE_PLACEHOLDER;
+    }
+  }
+}
+
 #define KEY_UP 72
 #define KEY_DOWN 80
 #define KEY_LEFT_A 97
@@ -70,6 +123,8 @@ int main() {
   raw.c_lflag &= ~(ECHO | ICANON); // Disable echo and canonical mode
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 
+  addObstaclesEveryRow(matrix);
+
   auto position = initialPosition;
   while (true) {
     clearScreenToBeReDrawn();
@@ -78,6 +133,8 @@ int main() {
     position = newPositionOfPlayer(keyboardInput, position);
 
     populateMatrix(matrix, position);
+
+    addObstacleToLastRowIfItObeysRules(matrix);
 
     this_thread::sleep_for(std::chrono::milliseconds(50));
   }
