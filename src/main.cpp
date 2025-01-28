@@ -57,16 +57,6 @@ void addObstaclesEveryRow(std::array<std::array<string, 10>, 10> &matrix) {
   for (size_t i = matrix.size() - FROM_WHICH_ROW_TO_ADD_OBSTACLES;
        i >= 0 && i < matrix.size();
        i -= HOW_OFTEN_AFTER_FIRST_ROW_TO_ADD_OBSTACLES) {
-    // for (size_t indexToCheckIfObstaclesAreInitialized = 0;
-    //      indexToCheckIfObstaclesAreInitialized < matrix[i].size();
-    //      indexToCheckIfObstaclesAreInitialized++) {
-    //   if (matrix[i][indexToCheckIfObstaclesAreInitialized] ==
-    //           OBSTACLE_PLACEHOLDER ||
-    //       matrix[i][indexToCheckIfObstaclesAreInitialized] ==
-    //           PLAYER_PLACEHOLDER) {
-    //     continue;
-    //   }
-    // }
     for (size_t j = 0; j < HOW_MANY_OBSTACLES_PER_ROW && j < matrix[i].size();
          ++j) {
       auto const elementIndexToBeConvertedToObstacle =
@@ -89,19 +79,11 @@ void addObstacleToLastRowIfItObeysRules(
       }
     }
   }
-
   if (addObstacles) {
     for (size_t j = 0; j < HOW_MANY_OBSTACLES_PER_ROW && j < matrix[0].size();
          ++j) {
-      size_t elementIndexToBeConvertedToObstacle =
+      const auto elementIndexToBeConvertedToObstacle =
           generateInitialPosition(matrix[0].size());
-
-      while (matrix[0][elementIndexToBeConvertedToObstacle] ==
-             OBSTACLE_PLACEHOLDER) {
-        elementIndexToBeConvertedToObstacle =
-            generateInitialPosition(matrix[0].size());
-      }
-
       matrix[0][elementIndexToBeConvertedToObstacle] = OBSTACLE_PLACEHOLDER;
     }
   }
@@ -109,14 +91,11 @@ void addObstacleToLastRowIfItObeysRules(
 
 void moveDownPlaceholdersInMatrix(
     std::array<std::array<std::string, 10>, 10> &matrix) {
-  for (size_t i = 0; i < matrix.size() - 1; ++i) {  // Go from top to bottom
-    for (size_t j = 0; j < matrix[i].size(); ++j) { // Check each column
+  for (size_t i = 0; i < matrix.size() - 1; ++i) {
+    for (size_t j = 0; j < matrix[i].size(); ++j) {
       if (matrix[i][j] != DEFAULT_PLACEHOLDER &&
           matrix[i + 1][j] == DEFAULT_PLACEHOLDER) {
-        // Swap if current is non-placeholder and the one below is a placeholder
         std::swap(matrix[i][j], matrix[i + 1][j]);
-        // Since we've moved this element, skip checking it again in the next
-        // iteration
         i++;
         if (i >= matrix.size() - 1)
           break; // Avoid going out of bounds
@@ -127,9 +106,17 @@ void moveDownPlaceholdersInMatrix(
 
 #define KEY_UP 72
 #define KEY_DOWN 80
+#define KEY_AHEAD_W 119
 #define KEY_LEFT_A 97
 #define KEY_RIGHT_D 100
-int newPositionOfPlayer(int input, int position) {
+int newPositionOfPlayer(int input,
+                        std::array<std::array<string, 10>, 10> &matrix) {
+  int position = 0;
+  for (int i = 0; i < matrix[matrix.size() - 1].max_size(); i++) {
+    if (matrix[matrix.size() - 1][i] == PLAYER_PLACEHOLDER) {
+      position = i;
+    }
+  }
   switch (input) {
   case KEY_LEFT_A:
     return position - 1;
@@ -139,6 +126,28 @@ int newPositionOfPlayer(int input, int position) {
     return position;
   }
 }
+
+void clearBottomRowFromObstacles(
+    std::array<std::array<string, 10>, 10> &matrix) {
+  for (int i = 0; i < matrix[matrix.size() - 1].max_size(); i++) {
+    if (matrix[matrix.size() - 1][i] == OBSTACLE_PLACEHOLDER) {
+      matrix[matrix.size() - 1][i] = DEFAULT_PLACEHOLDER;
+    }
+  }
+}
+
+void parseInput(const int keyboardInput, const int initialPosition,
+                std::array<std::array<string, 10>, 10> &matrix) {
+  switch (keyboardInput) {
+  case KEY_AHEAD_W:
+    moveDownPlaceholdersInMatrix(matrix);
+    break;
+  default:
+    populateMatrix(matrix, newPositionOfPlayer(keyboardInput, matrix));
+    break;
+  }
+}
+
 void clearScreenToBeReDrawn() { std::cout << "\033[2J\033[1;1H"; }
 
 int main() {
@@ -157,15 +166,12 @@ int main() {
   auto position = initialPosition;
   while (true) {
     clearScreenToBeReDrawn();
-    addObstacleToLastRowIfItObeysRules(matrix);
+    clearBottomRowFromObstacles(matrix);
     printMatrix(matrix);
     const auto keyboardInput = std::cin.get();
-    position = newPositionOfPlayer(keyboardInput, position);
-
-    populateMatrix(matrix, position);
-
-    this_thread::sleep_for(std::chrono::milliseconds(50));
+    parseInput(keyboardInput, initialPosition, matrix);
 
     moveDownPlaceholdersInMatrix(matrix);
+    addObstacleToLastRowIfItObeysRules(matrix);
   }
 }
