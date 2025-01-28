@@ -1,4 +1,4 @@
-# Installing# Installing
+# Installing
 You need to have nix with flakes installed. Provided you have that done, you just need to run ```nix develop```.
 
 # Having Fun
