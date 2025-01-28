@@ -98,19 +98,15 @@ void addObstacleToLastRowIfItObeysRules(
 
 void moveDownPlaceholdersInMatrix(
     std::array<std::array<std::string, 10>, 10> &matrix) {
-  for (size_t i = 0; i < matrix.size() - 1; ++i) {
+  for (size_t i = matrix.size() - 1; i > 0; --i) {
     for (size_t j = 0; j < matrix[i].size(); ++j) {
       if (matrix[i][j] == OBSTACLE_PLACEHOLDER &&
           matrix[i + 1][j] == PLAYER_PLACEHOLDER) {
         endOfGame();
       }
-      if (matrix[i][j] != DEFAULT_PLACEHOLDER &&
-          matrix[i + 1][j] == DEFAULT_PLACEHOLDER) {
-        std::swap(matrix[i][j], matrix[i + 1][j]);
-        i++;
-        if (i >= matrix.size() - 1) {
-          break; // Avoid going out of bounds
-        }
+      if (matrix[i - 1][j] != DEFAULT_PLACEHOLDER &&
+          matrix[i][j] == DEFAULT_PLACEHOLDER) {
+        swap(matrix[i - 1][j], matrix[i][j]);
       }
     }
   }
