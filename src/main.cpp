@@ -1,13 +1,12 @@
 #include "array"
-#include <atomic>
-#include <chrono>
 #include <cstddef>
+#include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <iterator>
 #include <ostream>
 #include <random>
 #include <termios.h>
-#include <thread>
 #include <unistd.h>
 using namespace std;
 
@@ -31,6 +30,11 @@ int generateInitialPosition(int arrLength) {
   return disInt(gen);
 }
 
+void endOfGame() {
+  cout << "THE END" << std::endl;
+  exit(0);
+}
+
 std::string const DEFAULT_PLACEHOLDER = "_";
 std::string const PLAYER_PLACEHOLDER = "*";
 std::string const OBSTACLE_PLACEHOLDER = "|";
@@ -38,10 +42,14 @@ void populateMatrix(std::array<std::array<string, 10>, 10> &matrix,
                     const int &initialPosition) {
   for (size_t i = 0; i < matrix.size(); ++i) {
     for (size_t j = 0; j < matrix[i].size(); ++j) {
-      if (matrix[i][j] == OBSTACLE_PLACEHOLDER) {
+      if (i != matrix[i].max_size() - 1 &&
+          matrix[i][j] == OBSTACLE_PLACEHOLDER) {
         continue;
       }
       if (i == matrix[i].max_size() - 1 && j == initialPosition) {
+        if (matrix[i][j] == OBSTACLE_PLACEHOLDER) {
+          endOfGame();
+        }
         matrix[i][j] = "*";
       } else {
         matrix[i][j] = "_";
@@ -93,12 +101,17 @@ void moveDownPlaceholdersInMatrix(
     std::array<std::array<std::string, 10>, 10> &matrix) {
   for (size_t i = 0; i < matrix.size() - 1; ++i) {
     for (size_t j = 0; j < matrix[i].size(); ++j) {
+      if (matrix[i][j] == OBSTACLE_PLACEHOLDER &&
+          matrix[i + 1][j] == PLAYER_PLACEHOLDER) {
+        endOfGame();
+      }
       if (matrix[i][j] != DEFAULT_PLACEHOLDER &&
           matrix[i + 1][j] == DEFAULT_PLACEHOLDER) {
         std::swap(matrix[i][j], matrix[i + 1][j]);
         i++;
-        if (i >= matrix.size() - 1)
+        if (i >= matrix.size() - 1) {
           break; // Avoid going out of bounds
+        }
       }
     }
   }
@@ -129,6 +142,16 @@ int newPositionOfPlayer(int input,
 
 void clearBottomRowFromObstacles(
     std::array<std::array<string, 10>, 10> &matrix) {
+  int counter = 0;
+  for (std::string const element : matrix[matrix.size() - 1]) {
+    if (element == OBSTACLE_PLACEHOLDER) {
+      counter++;
+    }
+  }
+  auto const isRowReadyForClean = counter >= HOW_MANY_OBSTACLES_PER_ROW;
+  if (!isRowReadyForClean) {
+    return;
+  }
   for (int i = 0; i < matrix[matrix.size() - 1].max_size(); i++) {
     if (matrix[matrix.size() - 1][i] == OBSTACLE_PLACEHOLDER) {
       matrix[matrix.size() - 1][i] = DEFAULT_PLACEHOLDER;
@@ -166,10 +189,10 @@ int main() {
   auto position = initialPosition;
   while (true) {
     clearScreenToBeReDrawn();
-    clearBottomRowFromObstacles(matrix);
     printMatrix(matrix);
     const auto keyboardInput = std::cin.get();
     parseInput(keyboardInput, initialPosition, matrix);
+    clearBottomRowFromObstacles(matrix);
 
     moveDownPlaceholdersInMatrix(matrix);
     addObstacleToLastRowIfItObeysRules(matrix);
